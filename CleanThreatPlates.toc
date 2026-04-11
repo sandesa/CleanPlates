@@ -2,7 +2,7 @@
 ## Title: CleanThreatPlates
 ## Notes: Color adjustment enemy plates based on threat.
 ## Author: sandesa
-## Version: 0.0.1
+## Version: 0.0.2
 
 core.lua
 kick.lua
