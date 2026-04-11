@@ -4,4 +4,6 @@
 ## Author: sandesa
 ## Version: 0.0.1
 
-CleanThreatPlates.lua
+core.lua
+kick.lua
+threat.lua
