@@ -3,6 +3,10 @@ CP.Threat = {}
 
 local Threat = CP.Threat
 
+-------------------------------------------------
+-- COLORS
+-------------------------------------------------
+
 local colors = {
     neutral = {1,1,0},
     noThreat = {1,0,0},
@@ -10,10 +14,14 @@ local colors = {
     fullThreat = {0,1,0},
 }
 
+-------------------------------------------------
+-- LOGIC
+-------------------------------------------------
+
 function Threat:GetColor(unit)
 
     local threat = UnitThreatSituation("player", unit)
-    local reaction = UnitReaction(unit,"player")
+    local reaction = UnitReaction(unit, "player")
 
     if threat == 3 then
         return colors.fullThreat
@@ -26,7 +34,7 @@ function Threat:GetColor(unit)
     return colors.noThreat
 end
 
-function Threat:Update(unit)
+function Threat:Apply(unit)
 
     local plate = C_NamePlate.GetNamePlateForUnit(unit, true)
     if not plate or plate:IsForbidden() then return end
@@ -44,8 +52,24 @@ function Threat:Update(unit)
     end
 end
 
+-------------------------------------------------
+-- PUBLIC API
+-------------------------------------------------
+
 function Threat:OnUnitAdded(unit)
-    self:Update(unit)
+    self:Apply(unit)
 end
 
-function Threat:OnUnitRemoved(unit) end
+function Threat:OnUnitRemoved(unit)
+end
+
+-------------------------------------------------
+-- BATCH UPDATE
+-------------------------------------------------
+
+function Threat:UpdateAll()
+
+    for unit in pairs(CP.activeUnits) do
+        self:Apply(unit)
+    end
+end

@@ -4,10 +4,8 @@ CP.Interrupt = {}
 local Interrupt = CP.Interrupt
 
 -------------------------------------------------
--- Storage
+-- STORAGE
 -------------------------------------------------
-
-Interrupt.casts = {}
 
 -------------------------------------------------
 -- UI
@@ -18,6 +16,10 @@ container:SetSize(220, 300)
 container:SetPoint("CENTER")
 
 container.buttons = {}
+
+-------------------------------------------------
+-- BUTTON
+-------------------------------------------------
 
 local function CreateButton(index)
 
@@ -50,7 +52,7 @@ local function CreateButton(index)
 end
 
 -------------------------------------------------
--- Cast Logic
+-- CAST DETECTION
 -------------------------------------------------
 
 function Interrupt:GetCast(unit)
@@ -72,30 +74,52 @@ function Interrupt:GetCast(unit)
 end
 
 function Interrupt:OnCastEvent(unit)
-    self.casts[unit] = self:GetCast(unit)
-end
 
-function Interrupt:Update(unit)
+    local data = CP.activeUnits[unit]
+    if not data then return end
 
-    local cast = self.casts[unit]
-
-    if cast and GetTime()*1000 >= cast.endTime then
-        self.casts[unit] = nil
-    end
-
-    self:UpdateUI()
+    data.cast = self:GetCast(unit)
 end
 
 -------------------------------------------------
--- UI Update
+-- CLEANUP
+-------------------------------------------------
+
+function Interrupt:OnUnitAdded(unit)
+    local data = CP.activeUnits[unit]
+    if data then data.cast = nil end
+end
+
+function Interrupt:OnUnitRemoved(unit)
+    local data = CP.activeUnits[unit]
+    if data then data.cast = nil end
+end
+
+-------------------------------------------------
+-- UI BUILD
 -------------------------------------------------
 
 function Interrupt:UpdateUI()
 
+    local sorted = {}
+
+    for unit, data in pairs(CP.activeUnits) do
+        if data.cast then
+            table.insert(sorted, {unit = unit, cast = data.cast})
+        end
+    end
+
+    table.sort(sorted, function(a, b)
+        return a.cast.endTime < b.cast.endTime
+    end)
+
     local index = 1
     local now = GetTime() * 1000
 
-    for unit, cast in pairs(self.casts) do
+    for _, entry in ipairs(sorted) do
+
+        local unit = entry.unit
+        local cast = entry.cast
 
         local btn = container.buttons[index]
 
@@ -121,12 +145,4 @@ function Interrupt:UpdateUI()
     for i = index, #container.buttons do
         container.buttons[i]:Hide()
     end
-end
-
-function Interrupt:OnUnitAdded(unit)
-    self.casts[unit] = nil
-end
-
-function Interrupt:OnUnitRemoved(unit)
-    self.casts[unit] = nil
 end

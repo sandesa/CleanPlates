@@ -4,40 +4,61 @@ local CP = CleanPlates
 local f = CreateFrame("Frame")
 
 -------------------------------------------------
--- Storage
+-- STATE
 -------------------------------------------------
 
 CP.activeUnits = {}
 
--------------------------------------------------
--- Config
--------------------------------------------------
-
-CP.throttle = 0.05
+CP.uiDirty = false
 
 -------------------------------------------------
--- Validation
+-- CONFIG
 -------------------------------------------------
 
 local nameplateRegex = "^nameplate%d+$"
 
+local regexList = {
+    boss = "^boss%d+$",
+    arena = "^arena%d+$",
+    party = "^party%d+$",
+}
+
+-------------------------------------------------
+-- UTIL
+-------------------------------------------------
+
 function CP:ValidateUnit(unit)
-
     if not UnitExists(unit) then return false end
-    if not unit:match(nameplateRegex) then return false end
 
-    return true
+    if not unit or not unit:match(nameplateRegex) then return false end
+
+    for _, regex in pairs(regexList) do
+        if unit:match(regex) then
+            return false
+        end
+    end
+
+    local reaction = UnitReaction(unit,"player")
+
+    return UnitIsEnemy("player",unit) or reaction <= 4
+end
+
+function CP:MarkUIDirty()
+    self.uiDirty = true
 end
 
 -------------------------------------------------
--- Unit Lifecycle
+-- UNIT LIFECYCLE
 -------------------------------------------------
 
 function CP:AddUnit(unit)
 
     if not self:ValidateUnit(unit) then return end
 
-    self.activeUnits[unit] = {}
+    self.activeUnits[unit] = {
+        cast = nil,
+        threatColor = nil,
+    }
 
     if self.Threat then
         self.Threat:OnUnitAdded(unit)
@@ -46,6 +67,8 @@ function CP:AddUnit(unit)
     if self.Interrupt then
         self.Interrupt:OnUnitAdded(unit)
     end
+
+    self:MarkUIDirty()
 end
 
 function CP:RemoveUnit(unit)
@@ -59,14 +82,17 @@ function CP:RemoveUnit(unit)
     if self.Interrupt then
         self.Interrupt:OnUnitRemoved(unit)
     end
+
+    self:MarkUIDirty()
 end
 
 -------------------------------------------------
--- Events
+-- EVENT DISPATCH
 -------------------------------------------------
 
 f:RegisterEvent("NAME_PLATE_UNIT_ADDED")
 f:RegisterEvent("NAME_PLATE_UNIT_REMOVED")
+
 f:RegisterEvent("UNIT_SPELLCAST_START")
 f:RegisterEvent("UNIT_SPELLCAST_CHANNEL_START")
 f:RegisterEvent("UNIT_SPELLCAST_STOP")
@@ -81,34 +107,29 @@ f:SetScript("OnEvent", function(_, event, unit)
         CP:RemoveUnit(unit)
 
     elseif event:find("UNIT_SPELLCAST") then
-        if CP.Interrupt and CP.activeUnits[unit] then
+        if CP.Interrupt and unit and CP.activeUnits[unit] then
             CP.Interrupt:OnCastEvent(unit)
+            CP:MarkUIDirty()
         end
     end
-
 end)
 
 -------------------------------------------------
--- Throttle Loop
+-- LIGHT RENDER LOOP
 -------------------------------------------------
 
-local elapsed = 0
+local render = CreateFrame("Frame")
 
-f:SetScript("OnUpdate", function(_, delta)
+render:SetScript("OnUpdate", function()
 
-    elapsed = elapsed + delta
-    if elapsed < CP.throttle then return end
-    elapsed = 0
+    if not CP.uiDirty then return end
+    CP.uiDirty = false
 
-    for unit in pairs(CP.activeUnits) do
-
-        if CP.Threat then
-            CP.Threat:Update(unit)
-        end
-
-        if CP.Interrupt then
-            CP.Interrupt:Update(unit)
-        end
+    if CP.Threat then
+        CP.Threat:UpdateAll()
     end
 
+    if CP.Interrupt then
+        CP.Interrupt:UpdateUI()
+    end
 end)
