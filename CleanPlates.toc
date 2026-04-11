@@ -1,0 +1,9 @@
+## Interface: 120001, 120000
+## Title: CleanPlates
+## Notes: Adjusting enemy plate color based on threat and making cast kicking easier.
+## Author: sandesa
+## Version: 0.0.2
+
+core.lua
+kick.lua
+threat.lua
