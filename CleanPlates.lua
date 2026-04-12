@@ -30,10 +30,8 @@ local colors = {
 
 local nameplateRegex = "^nameplate%d+$"
 
-local bossRegex = "^boss%d+$"
-local arenaRegex = "^arena%d+$"
-local partyRegex = "^party%d+$"
 
+-- Forbidden unit patterns
 local regexList = {
     boss = "^boss%d+$",
     arena = "^arena%d+$",
@@ -45,10 +43,6 @@ local regexList = {
 -------------------------------------------------
 
 local function IsAttackable(unit)
-
-    if not UnitExists(unit) then
-        return false
-    end
 
     local reaction = UnitReaction(unit,"player")
 
@@ -73,27 +67,6 @@ local function GetColor(unit)
     return colors.noThreat
 end
 
--- local function ValidateUnit(unit)
-
---     local response = true
-
---     if not UnitExists(unit) then 
---         return response = false
---     end
-
---     for regex in regexList do
---         if unit:match(regex) then 
---             return response = false
---         end
---     end
-
---     if not unit:match(nameplateRegex) then
---         return response = false
---     end
-
---     return response
--- end
-
 local function ValidateUnit(unit)
 
     if not UnitExists(unit) then 
@@ -108,6 +81,10 @@ local function ValidateUnit(unit)
         if unit:match(regex) then
             return false
         end
+    end
+    
+    if not IsAttackable(unit) then
+        return false
     end
 
     return true
@@ -150,8 +127,6 @@ end
 local function UpdateThreatColor(unit)
     
     if not ValidateUnit(unit) then return end
-
-    if not IsAttackable(unit) then return end
 
     local plate = C_NamePlate.GetNamePlateForUnit(unit, true)
 
