@@ -68,9 +68,9 @@ function CP:AddUnit(unit)
         self.Threat:OnUnitAdded(unit)
     end
 
-    if self.Interrupt then
-        self.Interrupt:OnUnitAdded(unit)
-    end
+    -- if self.Interrupt then
+    --     self.Interrupt:OnUnitAdded(unit)
+    -- end
 
     self:MarkUIDirty()
 end
@@ -83,9 +83,9 @@ function CP:RemoveUnit(unit)
         self.Threat:OnUnitRemoved(unit)
     end
 
-    if self.Interrupt then
-        self.Interrupt:OnUnitRemoved(unit)
-    end
+    -- if self.Interrupt then
+    --     self.Interrupt:OnUnitRemoved(unit)
+    -- end
 
     self:MarkUIDirty()
 end
@@ -110,11 +110,12 @@ f:SetScript("OnEvent", function(_, event, unit)
     elseif event == "NAME_PLATE_UNIT_REMOVED" then
         CP:RemoveUnit(unit)
 
-    elseif event:find("UNIT_SPELLCAST") then
-        if CP.Interrupt and unit and CP.activeUnits[unit] then
-            CP.Interrupt:OnCastEvent(event, unit)
-            CP:MarkUIDirty()
-        end
+    -- elseif event:find("UNIT_SPELLCAST") then
+    --     if CP.Interrupt and unit and CP.activeUnits[unit] then
+    --         CP.Interrupt:OnCastEvent(event, unit)
+    --         CP:MarkUIDirty()
+    --     end
+    -- end
     end
 end)
 
@@ -157,9 +158,9 @@ f:SetScript("OnUpdate", function(_, delta)
 
     elapsed = elapsed + delta
 
-    if CP.Interrupt then
-            CP.Interrupt:UpdateUI()
-    end
+    -- if CP.Interrupt then
+    --         CP.Interrupt:UpdateUI()
+    -- end
 
     if elapsed >= throttle then
         elapsed = 0
